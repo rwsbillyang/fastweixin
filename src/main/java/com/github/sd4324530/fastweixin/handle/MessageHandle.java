@@ -1,5 +1,7 @@
 package com.github.sd4324530.fastweixin.handle;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.github.sd4324530.fastweixin.message.BaseMsg;
 import com.github.sd4324530.fastweixin.message.req.BaseReqMsg;
 
@@ -16,7 +18,7 @@ public interface MessageHandle<M extends BaseReqMsg> {
      * @param message 微信消息
      * @return 回复用户的消息
      */
-    BaseMsg handle(M message);
+    BaseMsg handle(HttpServletRequest request,M message);
 
     /**
      * 在处理之前，判断本条消息是否符合处理的条件
@@ -24,5 +26,5 @@ public interface MessageHandle<M extends BaseReqMsg> {
      * @param message 消息
      * @return 是否需要处理
      */
-    boolean beforeHandle(M message);
+    boolean beforeHandle(HttpServletRequest request,M message);
 }

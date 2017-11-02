@@ -71,14 +71,14 @@ public abstract class WeixinSupport {
      *
      * @return token值
      */
-    protected abstract String getToken();
+    protected abstract String getToken(HttpServletRequest request);
 
     /**
      * 公众号APPID，使用消息加密模式时用户自行设置
      *
      * @return 微信公众平台提供的appid
      */
-    protected String getAppId() {
+    protected String getAppId(HttpServletRequest request) {
         return null;
     }
 
@@ -87,7 +87,7 @@ public abstract class WeixinSupport {
      *
      * @return 用户自定义的密钥
      */
-    protected String getAESKey() {
+    protected String getAESKey(HttpServletRequest request) {
         return null;
     }
 
@@ -116,7 +116,7 @@ public abstract class WeixinSupport {
      * @return 处理消息的结果，已经是接口要求的xml报文了
      */
     public String processRequest(HttpServletRequest request) {
-        Map<String, Object> reqMap = MessageUtil.parseXml(request, getToken(), getAppId(), getAESKey());
+        Map<String, Object> reqMap = MessageUtil.parseXml(request, getToken(request), getAppId(request), getAESKey(request));
         String fromUserName = (String) reqMap.get("FromUserName");
         String toUserName = (String) reqMap.get("ToUserName");
         String msgType = (String) reqMap.get("MsgType");
@@ -136,9 +136,9 @@ public abstract class WeixinSupport {
                 qrCodeEvent = new QrCodeEvent(eventKey, ticket);
                 buildBasicEvent(reqMap, qrCodeEvent);
                 if (eventType.equals(EventType.SCAN)) {
-                    msg = handleQrCodeEvent(qrCodeEvent);
+                    msg = handleQrCodeEvent(request,qrCodeEvent);
                     if (isNull(msg)) {
-                        msg = processEventHandle(qrCodeEvent);
+                        msg = processEventHandle(request,qrCodeEvent);
                     }
                 }
             }
@@ -149,34 +149,34 @@ public abstract class WeixinSupport {
                 } else {
                     buildBasicEvent(reqMap, event);
                 }
-                msg = handleSubscribe(event);
+                msg = handleSubscribe(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (eventType.equals(EventType.UNSUBSCRIBE)) {
                 BaseEvent event = new BaseEvent();
                 buildBasicEvent(reqMap, event);
-                msg = handleUnsubscribe(event);
+                msg = handleUnsubscribe(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (eventType.equals(EventType.CLICK)) {
                 String eventKey = (String) reqMap.get("EventKey");
                 LOG.debug("eventKey:{}", eventKey);
                 MenuEvent event = new MenuEvent(eventKey);
                 buildBasicEvent(reqMap, event);
-                msg = handleMenuClickEvent(event);
+                msg = handleMenuClickEvent(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (eventType.equals(EventType.VIEW)) {
                 String eventKey = (String) reqMap.get("EventKey");
                 LOG.debug("eventKey:{}", eventKey);
                 MenuEvent event = new MenuEvent(eventKey);
                 buildBasicEvent(reqMap, event);
-                msg = handleMenuViewEvent(event);
+                msg = handleMenuViewEvent(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (eventType.equals(EventType.LOCATION)) {
                 double latitude = Double.parseDouble((String) reqMap.get("Latitude"));
@@ -185,9 +185,9 @@ public abstract class WeixinSupport {
                 LocationEvent event = new LocationEvent(latitude, longitude,
                         precision);
                 buildBasicEvent(reqMap, event);
-                msg = handleLocationEvent(event);
+                msg = handleLocationEvent(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (EventType.SCANCODEPUSH.equals(eventType) || EventType.SCANCODEWAITMSG.equals(eventType)) {
                 String eventKey = (String) reqMap.get("EventKey");
@@ -196,9 +196,9 @@ public abstract class WeixinSupport {
                 String scanResult = (String) scanCodeInfo.get("ScanResult");
                 ScanCodeEvent event = new ScanCodeEvent(eventKey, scanType, scanResult);
                 buildBasicEvent(reqMap, event);
-                msg = handleScanCodeEvent(event);
+                msg = handleScanCodeEvent(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (EventType.PICPHOTOORALBUM.equals(eventType) || EventType.PICSYSPHOTO.equals(eventType) || EventType.PICWEIXIN.equals(eventType)) {
                 String eventKey = (String) reqMap.get("EventKey");
@@ -207,18 +207,18 @@ public abstract class WeixinSupport {
                 List<Map> picList = (List) sendPicsInfo.get("PicList");
                 SendPicsInfoEvent event = new SendPicsInfoEvent(eventKey, count, picList);
                 buildBasicEvent(reqMap, event);
-                msg = handlePSendPicsInfoEvent(event);
+                msg = handlePSendPicsInfoEvent(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             } else if (EventType.TEMPLATESENDJOBFINISH.equals(eventType)) {
                 String msgId = (String) reqMap.get("MsgID");
                 String status = (String) reqMap.get("Status");
                 TemplateMsgEvent event = new TemplateMsgEvent(msgId,status);
                 buildBasicEvent(reqMap, event);
-                msg = handleTemplateMsgEvent(event);
+                msg = handleTemplateMsgEvent(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             }else if(EventType.MASSSENDJOBFINISH.equals(eventType)){
                 String msgId=(String)reqMap.get("MsgID");
@@ -229,9 +229,9 @@ public abstract class WeixinSupport {
                 Integer errorCount=Integer.valueOf(String.valueOf(reqMap.get("ErrorCount")));
                 SendMessageEvent event=new SendMessageEvent(msgId,status,TotalCount,filterCount,sentCount,errorCount);
                 buildBasicEvent(reqMap, event);
-                msg=callBackAllMessage(event);
+                msg=callBackAllMessage(request,event);
                 if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                    msg = processEventHandle(request,event);
                 }
             }
         } else {
@@ -240,18 +240,18 @@ public abstract class WeixinSupport {
                 LOG.debug("文本消息内容:{}", content);
                 TextReqMsg textReqMsg = new TextReqMsg(content);
                 buildBasicReqMsg(reqMap, textReqMsg);
-                msg = handleTextMsg(textReqMsg);
+                msg = handleTextMsg(request,textReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(textReqMsg);
+                    msg = processMessageHandle(request,textReqMsg);
                 }
             } else if (msgType.equals(ReqType.IMAGE)) {
                 String picUrl = (String) reqMap.get("PicUrl");
                 String mediaId = (String) reqMap.get("MediaId");
                 ImageReqMsg imageReqMsg = new ImageReqMsg(picUrl, mediaId);
                 buildBasicReqMsg(reqMap, imageReqMsg);
-                msg = handleImageMsg(imageReqMsg);
+                msg = handleImageMsg(request,imageReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(imageReqMsg);
+                    msg = processMessageHandle(request,imageReqMsg);
                 }
             } else if (msgType.equals(ReqType.VOICE)) {
                 String format = (String) reqMap.get("Format");
@@ -260,27 +260,27 @@ public abstract class WeixinSupport {
                 VoiceReqMsg voiceReqMsg = new VoiceReqMsg(mediaId, format,
                         recognition);
                 buildBasicReqMsg(reqMap, voiceReqMsg);
-                msg = handleVoiceMsg(voiceReqMsg);
+                msg = handleVoiceMsg(request,voiceReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(voiceReqMsg);
+                    msg = processMessageHandle(request,voiceReqMsg);
                 }
             } else if (msgType.equals(ReqType.VIDEO)) {
                 String thumbMediaId = (String) reqMap.get("ThumbMediaId");
                 String mediaId = (String) reqMap.get("MediaId");
                 VideoReqMsg videoReqMsg = new VideoReqMsg(mediaId, thumbMediaId);
                 buildBasicReqMsg(reqMap, videoReqMsg);
-                msg = handleVideoMsg(videoReqMsg);
+                msg = handleVideoMsg(request,videoReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(videoReqMsg);
+                    msg = processMessageHandle(request,videoReqMsg);
                 }
             } else if (msgType.equals(ReqType.SHORT_VIDEO)) {
                 String thumbMediaId = (String) reqMap.get("ThumbMediaId");
                 String mediaId = (String) reqMap.get("MediaId");
                 VideoReqMsg videoReqMsg = new VideoReqMsg(mediaId, thumbMediaId);
                 buildBasicReqMsg(reqMap, videoReqMsg);
-                msg = hadnleShortVideoMsg(videoReqMsg);
+                msg = hadnleShortVideoMsg(request,videoReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(videoReqMsg);
+                    msg = processMessageHandle(request,videoReqMsg);
                 }
             } else if (msgType.equals(ReqType.LOCATION)) {
                 double locationX = Double.parseDouble((String) reqMap.get("Location_X"));
@@ -290,9 +290,9 @@ public abstract class WeixinSupport {
                 LocationReqMsg locationReqMsg = new LocationReqMsg(locationX,
                         locationY, scale, label);
                 buildBasicReqMsg(reqMap, locationReqMsg);
-                msg = handleLocationMsg(locationReqMsg);
+                msg = handleLocationMsg(request,locationReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(locationReqMsg);
+                    msg = processMessageHandle(request,locationReqMsg);
                 }
             } else if (msgType.equals(ReqType.LINK)) {
                 String title = (String) reqMap.get("Title");
@@ -301,9 +301,9 @@ public abstract class WeixinSupport {
                 LOG.debug("链接消息地址:{}", url);
                 LinkReqMsg linkReqMsg = new LinkReqMsg(title, description, url);
                 buildBasicReqMsg(reqMap, linkReqMsg);
-                msg = handleLinkMsg(linkReqMsg);
+                msg = handleLinkMsg(request,linkReqMsg);
                 if (isNull(msg)) {
-                    msg = processMessageHandle(linkReqMsg);
+                    msg = processMessageHandle(request,linkReqMsg);
                 }
             }
         }
@@ -312,9 +312,9 @@ public abstract class WeixinSupport {
             msg.setFromUserName(toUserName);
             msg.setToUserName(fromUserName);
             result = msg.toXml();
-            if (StrUtil.isNotBlank(getAESKey())) {
+            if (StrUtil.isNotBlank(getAESKey(request))) {
                 try {
-                    WXBizMsgCrypt pc = new WXBizMsgCrypt(getToken(), getAESKey(), getAppId());
+                    WXBizMsgCrypt pc = new WXBizMsgCrypt(getToken(request), getAESKey(request), getAppId(request));
                     result = pc.encryptMsg(result, request.getParameter("timestamp"), request.getParameter("nonce"));
                     LOG.debug("加密后密文:{}", result);
                 } catch (AesException e) {
@@ -325,7 +325,7 @@ public abstract class WeixinSupport {
         return result;
     }
 
-    private BaseMsg processMessageHandle(BaseReqMsg msg) {
+    private BaseMsg processMessageHandle(HttpServletRequest request,BaseReqMsg msg) {
         if (isEmpty(messageHandles)) {
             synchronized (LOCK) {
                 messageHandles = this.initMessageHandles();
@@ -336,12 +336,12 @@ public abstract class WeixinSupport {
                 BaseMsg resultMsg = null;
                 boolean result;
                 try {
-                    result = messageHandle.beforeHandle(msg);
+                    result = messageHandle.beforeHandle(request,msg);
                 } catch (Exception e) {
                     result = false;
                 }
                 if (result) {
-                    resultMsg = messageHandle.handle(msg);
+                    resultMsg = messageHandle.handle(request,msg);
                 }
                 if (nonNull(resultMsg)) {
                     return resultMsg;
@@ -351,7 +351,7 @@ public abstract class WeixinSupport {
         return null;
     }
 
-    private BaseMsg processEventHandle(BaseEvent event) {
+    private BaseMsg processEventHandle(HttpServletRequest request,BaseEvent event) {
         if (isEmpty(eventHandles)) {
             synchronized (LOCK) {
                 eventHandles = this.initEventHandles();
@@ -362,12 +362,12 @@ public abstract class WeixinSupport {
                 BaseMsg resultMsg = null;
                 boolean result;
                 try {
-                    result = eventHandle.beforeHandle(event);
+                    result = eventHandle.beforeHandle(request,event);
                 } catch (Exception e) {
                     result = false;
                 }
                 if (result) {
-                    resultMsg = eventHandle.handle(event);
+                    resultMsg = eventHandle.handle(request,event);
                 }
                 if (nonNull(resultMsg)) {
                     return resultMsg;
@@ -383,8 +383,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleTextMsg(TextReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg handleTextMsg(HttpServletRequest request,TextReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -393,8 +393,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleImageMsg(ImageReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg handleImageMsg(HttpServletRequest request,ImageReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -403,8 +403,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleVoiceMsg(VoiceReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg handleVoiceMsg(HttpServletRequest request,VoiceReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -413,8 +413,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleVideoMsg(VideoReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg handleVideoMsg(HttpServletRequest request,VideoReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -423,8 +423,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg hadnleShortVideoMsg(VideoReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg hadnleShortVideoMsg(HttpServletRequest request,VideoReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -433,8 +433,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleLocationMsg(LocationReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg handleLocationMsg(HttpServletRequest request,LocationReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -443,8 +443,8 @@ public abstract class WeixinSupport {
      * @param msg 请求消息对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleLinkMsg(LinkReqMsg msg) {
-        return handleDefaultMsg(msg);
+    protected BaseMsg handleLinkMsg(HttpServletRequest request,LinkReqMsg msg) {
+        return handleDefaultMsg(request,msg);
     }
 
     /**
@@ -453,8 +453,8 @@ public abstract class WeixinSupport {
      * @param event 扫描二维码事件对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleQrCodeEvent(QrCodeEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handleQrCodeEvent(HttpServletRequest request,QrCodeEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -463,8 +463,8 @@ public abstract class WeixinSupport {
      * @param event 地理位置事件对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleLocationEvent(LocationEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handleLocationEvent(HttpServletRequest request,LocationEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -473,8 +473,8 @@ public abstract class WeixinSupport {
      * @param event 菜单点击事件对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleMenuClickEvent(MenuEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handleMenuClickEvent(HttpServletRequest request,MenuEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -483,8 +483,8 @@ public abstract class WeixinSupport {
      * @param event 菜单跳转事件对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleMenuViewEvent(MenuEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handleMenuViewEvent(HttpServletRequest request,MenuEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -493,8 +493,8 @@ public abstract class WeixinSupport {
      * @param event 菜单扫描推事件对象
      * @return 响应的消息对象
      */
-    protected BaseMsg handleScanCodeEvent(ScanCodeEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handleScanCodeEvent(HttpServletRequest request,ScanCodeEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -503,8 +503,8 @@ public abstract class WeixinSupport {
      * @param event 菜单弹出相册事件
      * @return 响应的消息对象
      */
-    protected BaseMsg handlePSendPicsInfoEvent(SendPicsInfoEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handlePSendPicsInfoEvent(HttpServletRequest request,SendPicsInfoEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -513,8 +513,8 @@ public abstract class WeixinSupport {
      * @param event 菜单弹出相册事件
      * @return 响应的消息对象
      */
-    protected BaseMsg handleTemplateMsgEvent(TemplateMsgEvent event) {
-        return handleDefaultEvent(event);
+    protected BaseMsg handleTemplateMsgEvent(HttpServletRequest request,TemplateMsgEvent event) {
+        return handleDefaultEvent(request,event);
     }
 
     /**
@@ -523,7 +523,7 @@ public abstract class WeixinSupport {
      * @param event 添加关注事件对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleSubscribe(BaseEvent event) {
+    protected BaseMsg handleSubscribe(HttpServletRequest request,BaseEvent event) {
         return new TextMsg("感谢您的关注!");
     }
 
@@ -533,7 +533,7 @@ public abstract class WeixinSupport {
      * @param event 群发回调方法
      * @return 响应消息对象
      */
-    protected  BaseMsg callBackAllMessage(SendMessageEvent event){return  handleDefaultEvent(event);}
+    protected  BaseMsg callBackAllMessage(HttpServletRequest request,SendMessageEvent event){return  handleDefaultEvent(request,event);}
 
     /**
      * 处理取消关注事件，有需要时子类重写
@@ -541,15 +541,15 @@ public abstract class WeixinSupport {
      * @param event 取消关注事件对象
      * @return 响应消息对象
      */
-    protected BaseMsg handleUnsubscribe(BaseEvent event) {
+    protected BaseMsg handleUnsubscribe(HttpServletRequest request,BaseEvent event) {
         return null;
     }
 
-    protected BaseMsg handleDefaultMsg(BaseReqMsg msg) {
+    protected BaseMsg handleDefaultMsg(HttpServletRequest request,BaseReqMsg msg) {
         return null;
     }
 
-    protected BaseMsg handleDefaultEvent(BaseEvent event) {
+    protected BaseMsg handleDefaultEvent(HttpServletRequest request,BaseEvent event) {
         return null;
     }
 
@@ -574,6 +574,6 @@ public abstract class WeixinSupport {
         String signature = request.getParameter("signature");
         String timestamp = request.getParameter("timestamp");
         String nonce = request.getParameter("nonce");
-        return SignUtil.checkSignature(getToken(), signature, timestamp, nonce);
+        return SignUtil.checkSignature(getToken(request), signature, timestamp, nonce);
     }
 }
