@@ -59,7 +59,14 @@ public final class SignUtil {
         } catch (UnsupportedEncodingException e) {
             LOG.error("编码格式不支持", e);
         }
-        return tmpStr != null && tmpStr.equalsIgnoreCase(signature);
+        boolean ret = tmpStr != null && tmpStr.equalsIgnoreCase(signature);
+        if(!ret) {
+        		LOG.warn("fail to check bind weixin:token="+token+",timestamp="+timestamp+",nonce="+nonce+",from tencent signature="+signature+",our digest="+tmpStr+",original content="+content.toString());
+        	}else
+        	{
+        		LOG.debug("successful to bind weixin:token="+token+",timestamp="+timestamp+",nonce="+nonce+",from tencent signature="+signature+",our digest="+tmpStr+",original content="+content.toString());
+        	}
+        return ret;
     }
 
     /**
