@@ -22,6 +22,34 @@ public class GetUserInfoResponse extends BaseResponse {
     private String remark;
     private Integer groupid;
 
+	/**
+	 * 返回用户关注的渠道来源，
+	 * ADD_SCENE_SEARCH 公众号搜索，
+	 * ADD_SCENE_ACCOUNT_MIGRATION 公众号迁移，
+	 * ADD_SCENE_PROFILE_CARD 名片分享，
+	 * ADD_SCENE_QR_CODE 扫描二维码，
+	 * ADD_SCENE_PROFILE_ LINK 图文页内名称点击，
+	 * ADD_SCENE_PROFILE_ITEM 图文页右上角菜单，
+	 * ADD_SCENE_PAID 支付后关注，
+	 * ADD_SCENE_OTHERS 其他
+	 * https://developers.weixin.qq.com/doc/offiaccount/User_Management/Get_users_basic_information_UnionID.html#UinonId
+	 * */
+    @JSONField(name = "subscribe_scene")
+    private String    subscribeScene;
+
+
+	/**
+     * 二维码扫码场景（开发者自定义）
+     * */
+    @JSONField(name = "qr_scene")
+    private Integer qrScene;
+    
+    /**
+     * 二维码扫码场景描述（开发者自定义）
+     * */
+    @JSONField(name = "qr_scene_str")
+    private String qrSceneStr;
+    
     public Integer getSubscribe() {
         return subscribe;
     }
@@ -124,5 +152,30 @@ public class GetUserInfoResponse extends BaseResponse {
 
 	public void setGroupid(Integer groupid) {
 		this.groupid = groupid;
+	}
+	
+    
+    public String getSubscribeScene() {
+		return subscribeScene;
+	}
+
+	public void setSubscribeScene(String subscribeScene) {
+		this.subscribeScene = subscribeScene;
+	}
+
+	public Integer getQrScene() {
+		return qrScene;
+	}
+
+	public void setQrScene(Integer qrScene) {
+		this.qrScene = qrScene;
+	}
+
+	public String getQrSceneStr() {
+		return qrSceneStr;
+	}
+
+	public void setQrSceneStr(String qrSceneStr) {
+		this.qrSceneStr = qrSceneStr;
 	}
 }
