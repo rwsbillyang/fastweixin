@@ -32,7 +32,16 @@ public class MenuButton extends BaseModel {
      * 菜单跳转的URL，当MenuType值为VIEW时用
      */
     private String url;
+    /**
+     * 公众号菜单按钮为关联小程序时小程序appid
+     */
+    private String appid;
 
+    /**
+     * 公众号菜单按钮为关联小程序时小程序页面地址
+     * pages/list/list
+     */
+    private String pagepath;
     /**
      * 菜单显示的永久素材的MaterialID,当MenuType值为media_id和view_limited时必需
      */
@@ -76,7 +85,21 @@ public class MenuButton extends BaseModel {
     public void setUrl(String url) {
         this.url = url;
     }
+    public String getAppid() {
+        return appid;
+    }
 
+    public void setAppid(String appid) {
+        this.appid = appid;
+    }
+
+    public String getPagepath() {
+        return pagepath;
+    }
+
+    public void setPagepath(String pagepath) {
+        this.pagepath = pagepath;
+    }
     public String getMediaId() {
         return mediaId;
     }
