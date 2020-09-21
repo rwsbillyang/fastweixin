@@ -1,5 +1,7 @@
 package com.github.sd4324530.fastweixin.servlet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,7 +21,7 @@ import java.io.PrintWriter;
  */
 @Controller
 public abstract class WeixinControllerSupport extends WeixinSupport {
-	
+	private static final Logger LOG  = LoggerFactory.getLogger(WeixinControllerSupport.class);
     /**
      * 绑定微信服务器
      *
@@ -33,6 +35,7 @@ public abstract class WeixinControllerSupport extends WeixinSupport {
             //绑定微信服务器成功
             return request.getParameter("echostr");
         } else {
+        	LOG.warn("fail to check signature in devURL GET");
             //绑定微信服务器失败
             return "";
         }
@@ -48,13 +51,16 @@ public abstract class WeixinControllerSupport extends WeixinSupport {
      */
     @RequestMapping(method = RequestMethod.POST)
     protected final void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if (isLegal(request)) {
-            String result = processRequest(request);
-            //设置正确的 content-type 以防止中文乱码
-            response.setContentType("text/xml;charset=UTF-8");
-            PrintWriter writer = response.getWriter();
-            writer.write(result);
-            writer.close();
+    	 String result = "";
+    	if (isLegal(request)) {
+            result = processRequest(request);
+        }else {
+        	LOG.warn("fail to check signature in devURL POST");
         }
+    	//设置正确的 content-type 以防止中文乱码
+        response.setContentType("text/xml;charset=UTF-8");
+        PrintWriter writer = response.getWriter();
+        writer.write(result);
+        writer.close();
     }
 }

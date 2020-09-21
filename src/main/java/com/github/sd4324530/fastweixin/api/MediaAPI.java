@@ -49,7 +49,7 @@ public class MediaAPI extends BaseAPI {
      */
     public UploadMediaResponse uploadMedia(MediaType type, File file) {
         UploadMediaResponse response;
-        String url = "http://file.api.weixin.qq.com/cgi-bin/media/upload?access_token=#&type=" + type.toString();
+        String url = BASE_API_URL + "cgi-bin/media/upload?access_token=#&type=" + type.toString();
         BaseResponse r = executePost(url, null, file);
         response = JSONUtil.toBean(r.getErrmsg(), UploadMediaResponse.class);
         return response;
@@ -78,7 +78,7 @@ public class MediaAPI extends BaseAPI {
      */
     public UploadImgResponse uploadImg(File file){
         UploadImgResponse response;
-        String url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=#";
+        String url = BASE_API_URL + "cgi-bin/media/uploadimg?access_token=#";
         BaseResponse r = executePost(url, null, file);
         response = JSONUtil.toBean(r.getErrmsg(), UploadImgResponse.class);
         return response;
@@ -92,7 +92,7 @@ public class MediaAPI extends BaseAPI {
      */
     public DownloadMediaResponse downloadMedia(String mediaId) {
         DownloadMediaResponse response = new DownloadMediaResponse();
-        String url = "http://file.api.weixin.qq.com/cgi-bin/media/get?access_token=" + this.config.getAccessToken() + "&media_id=" + mediaId;
+        String url = BASE_API_URL + "cgi-bin/media/get?access_token=" + this.config.getAccessToken() + "&media_id=" + mediaId;
         RequestConfig config = RequestConfig.custom().setConnectionRequestTimeout(NetWorkCenter.CONNECT_TIMEOUT).setConnectTimeout(NetWorkCenter.CONNECT_TIMEOUT).setSocketTimeout(NetWorkCenter.CONNECT_TIMEOUT).build();
         CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
         HttpGet get = new HttpGet(url);
